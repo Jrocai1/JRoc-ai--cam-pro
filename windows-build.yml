@@ -1,0 +1,69 @@
+name: Windows x64 build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Python source
+        run: python -m compileall -q main.py jroc_mobile jroc_samsung tests
+      - name: Run automated tests
+        run: python -m unittest discover -s tests -v
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Build standalone Windows app
+        run: pyinstaller --noconfirm --clean --windowed --name "J-Roc AI Mobile Repair" main.py
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Build x64 setup installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\J-Roc-AI-Mobile-Repair.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+      - name: Smoke-test install and uninstall
+        shell: pwsh
+        run: |
+          $setup = (Resolve-Path "release/J-Roc-AI-Mobile-Repair-v0.2.0-Setup-x64.exe").Path
+          $testDir = Join-Path $env:RUNNER_TEMP "JROC_MobileRepair_Test"
+          $install = Start-Process -FilePath $setup -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR=$testDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer smoke test failed with exit code $($install.ExitCode)" }
+          $appExe = Join-Path $testDir "J-Roc AI Mobile Repair.exe"
+          if (-not (Test-Path $appExe)) { throw "Expected installed executable not found: $appExe" }
+          $uninstaller = Join-Path $testDir "unins000.exe"
+          if (-not (Test-Path $uninstaller)) { throw "Expected uninstaller not found: $uninstaller" }
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)" }
+          if (Test-Path $appExe) { throw "Application executable still exists after uninstall." }
+      - name: Create portable archive and SHA-256 manifest
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/J-Roc AI Mobile Repair/*" -DestinationPath "release/J-Roc-AI-Mobile-Repair-v0.2.0-Windows-x64-Portable.zip" -Force
+          Get-ChildItem release -File | Where-Object { $_.Name -ne "SHA256SUMS.txt" } | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            "$($hash.Hash)  $($_.Name)"
+          } | Set-Content -Encoding ascii release/SHA256SUMS.txt
+      - name: Upload Windows x64 release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: J-Roc-AI-Mobile-Repair-Windows-x64-v0.2.0
+          path: release/*
+          if-no-files-found: error

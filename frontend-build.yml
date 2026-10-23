@@ -1,0 +1,62 @@
+name: React frontend and Edge Function checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "supabase/**"
+      - ".github/workflows/frontend-build.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "supabase/**"
+      - ".github/workflows/frontend-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned dependencies
+        run: npm install --no-audit --no-fund
+      - name: Test supported device scope and validation
+        run: npm test
+      - name: Build frontend
+        run: npm run build
+      - name: Upload Vite build
+        uses: actions/upload-artifact@v4
+        with:
+          name: J-Roc-AI-Mobile-Repair-Web-Frontend
+          path: web/dist/
+          if-no-files-found: error
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Supabase Edge Functions
+        run: |
+          deno check supabase/functions/create-unlock-order/index.ts
+          deno check supabase/functions/create-repair-request/index.ts
+          deno check supabase/functions/lookup-service-request/index.ts
+          deno check supabase/functions/stripe-webhook/index.ts
+          deno check supabase/functions/poll-unlock-orders/index.ts

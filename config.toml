@@ -1,0 +1,16 @@
+project_id = "jrocai-mobile-repair"
+
+[functions.create-unlock-order]
+verify_jwt = false
+
+[functions.create-repair-request]
+verify_jwt = false
+
+[functions.lookup-service-request]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.poll-unlock-orders]
+verify_jwt = false

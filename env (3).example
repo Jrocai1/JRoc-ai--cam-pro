@@ -1,0 +1,10 @@
+# Copy to supabase/functions/.env for local Supabase development.
+# Never commit supabase/functions/.env.
+STRIPE_SECRET_KEY=sk_test_REPLACE_ME
+STRIPE_WEBHOOK_SECRET=whsec_REPLACE_ME
+UNLOCK_PRICE_CENTS=4999
+UNLOCK_CURRENCY=usd
+WHOLESALER_ORDER_URL=https://api.example-wholesaler.test/v1/orders
+WHOLESALER_STATUS_URL_TEMPLATE=https://api.example-wholesaler.test/v1/orders/{supplier_order_id}
+WHOLESALER_API_KEY=REPLACE_ME
+UNLOCK_POLL_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
