@@ -10,7 +10,7 @@ from backend_bus.model_router import load_model_targets
 from config.settings import get_settings
 from core_swarm.agent_registry import AgentKey
 from core_swarm.orchestrator import dispatch
-from dashboard_server import create_session, init_db, list_sessions
+from dashboard_server import create_session, init_db, list_audit_events, list_sessions, update_session
 
 
 class DeviceDiscoveryTests(unittest.TestCase):
@@ -64,6 +64,27 @@ class BenchSessionTests(unittest.TestCase):
             database = Path(temp) / "bench.sqlite3"
             with self.assertRaisesRegex(ValueError, "Unsupported fields"):
                 create_session({"serial_number": "123"}, database)
+
+    def test_session_status_update_persists_and_creates_audit_event(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database = Path(temp) / "bench.sqlite3"
+            session = create_session({"device_make": "Samsung", "device_model": "Galaxy S24"}, database)
+            updated = update_session(session["id"], {"status": "completed"}, database)
+            self.assertEqual(updated["status"], "completed")
+            self.assertGreaterEqual(updated["updated_at"], session["updated_at"])
+            events = list_audit_events(database)
+            self.assertEqual([event["event_type"] for event in events], ["session.status_changed", "session.created"])
+            self.assertEqual(events[0]["details"]["from"], "open")
+            self.assertEqual(events[0]["details"]["to"], "completed")
+
+    def test_session_status_update_rejects_unapproved_fields_and_statuses(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database = Path(temp) / "bench.sqlite3"
+            session = create_session({}, database)
+            with self.assertRaisesRegex(ValueError, "only the status"):
+                update_session(session["id"], {"status": "completed", "notes": "changed"}, database)
+            with self.assertRaisesRegex(ValueError, "status must be"):
+                update_session(session["id"], {"status": "flashed"}, database)
 
 
 if __name__ == "__main__":
