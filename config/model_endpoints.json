@@ -1,0 +1,12 @@
+{
+  "targets": [
+    {
+      "name": "ollama-local",
+      "base_url": "http://127.0.0.1:11434",
+      "model": "llama3.2",
+      "enabled": false,
+      "allow_remote": false,
+      "timeout_seconds": 5
+    }
+  ]
+}
