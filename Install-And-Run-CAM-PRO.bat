@@ -40,7 +40,21 @@ echo [3/4] Installing CAM PRO development/runtime requirements...
 ".venv\Scripts\python.exe" -m pip install -r requirements-dev.txt
 if errorlevel 1 goto :failed
 
-echo [4/4] Starting local-only dashboard with read-only device discovery...
+echo [4/5] Preparing the React dashboard when Node.js/npm is available...
+where npm >nul 2>nul
+if errorlevel 1 (
+  echo WARNING: npm was not found. The older local bench page will be used.
+  echo Install Node.js 22 or newer and rerun this launcher to build the React dashboard.
+) else (
+  echo Installing frontend dependencies...
+  call npm install --no-audit --no-fund
+  if errorlevel 1 goto :failed
+  echo Building React dashboard...
+  call npm run build
+  if errorlevel 1 goto :failed
+)
+
+echo [5/5] Starting local-only dashboard with read-only device discovery...
 echo.
 echo Browser address: http://127.0.0.1:8787
 echo This window must stay open while you use the dashboard.
