@@ -173,7 +173,10 @@ def create_session(payload: dict, path: Path = DB_PATH) -> dict:
 
 def allowed_origins() -> set[str]:
     defaults = {"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173", "http://127.0.0.1:4173"}
-    configured = os.environ.get("CAM_ALLOWED_ORIGINS", "")
+    configured = ",".join((
+        os.environ.get("CAM_ALLOWED_ORIGINS", ""),
+        os.environ.get("JROC_CAM_CORS_ORIGINS", ""),
+    ))
     return defaults | {origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()}
 
 
