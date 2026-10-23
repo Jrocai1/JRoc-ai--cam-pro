@@ -1,0 +1,35 @@
+name: J-ROC AI CAM PRO — Python tests
+
+on:
+  push:
+    branches: [main, "rebuild/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: Python 3.12 unit tests (Windows and Ubuntu)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install development dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Compile CAM PRO Python modules
+        run: python -m compileall -q dashboard_server.py backend_bus config core_swarm tests
+      - name: Run unit and integration tests
+        run: python -m unittest discover -s tests -v
