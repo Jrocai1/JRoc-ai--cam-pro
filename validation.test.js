@@ -4,7 +4,7 @@ import {
   SUPPORTED_BRANDS,
   SUPPORTED_DEVICE_TYPES,
   validateServiceForm
-} from "../src/lib/validation.js";
+} from "./validation.js";
 
 const validRepair = {
   brand: "Apple", deviceType: "Phone", serviceType: "repair",

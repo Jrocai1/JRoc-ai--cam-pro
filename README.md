@@ -51,6 +51,31 @@ python -m backend_bus.port_listener --pretty
 
 The discovery command reports metadata only. It does not flash, unlock, erase, or modify connected devices.
 
+## React dashboard + local Python bench API
+
+The existing React interface remains in place. The **Local Bench Console** adds a local-first integration to the Python bench API without replacing the existing request, tracking, or recovery screens.
+
+Run the Python API in one PowerShell window:
+
+```powershell
+py -3.12 -m venv .venv
+.\\.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt
+.\\.venv\\Scripts\\python.exe dashboard_server.py
+```
+
+Run the React app from the repository root in a second PowerShell window:
+
+```powershell
+npm install
+npm run dev -- --host 127.0.0.1
+```
+
+Open the localhost URL printed by Vite, then select **Local Bench Console**. The default local API URL is `http://127.0.0.1:8787`; override it with `VITE_CAM_API_BASE_URL` only when necessary. The local server allows the standard localhost Vite origins. For another exact frontend origin, set `CAM_ALLOWED_ORIGINS` or `JROC_CAM_CORS_ORIGINS` on the server process as a comma-separated list. Never configure a wildcard origin.
+
+The console can read USB/COM metadata, run read-only host/ADB/Fastboot checks when the relevant tools are available, create and update local SQLite bench sessions, and display session audit events. The audit events record local session creation and status changes; they are not a tamper-proof or authenticated compliance ledger. The local SQLite data is not automatically synced to Supabase.
+
+See [Builder React Interface Audit and CAM PRO Integration](BUILDER_REACT_AUDIT.md) for the source-based component review, API mapping, and release gates.
+
 ## Database deployment
 
 Review `database/core_schema.sql` before applying it to a Supabase project. Use a migration workflow and a least-privilege database role. The schema intentionally does not enable broad public access or add permissive Row Level Security (RLS) policies. Before exposing tables through Supabase APIs, define and test access policies for the application's actual authentication and authorization model.
