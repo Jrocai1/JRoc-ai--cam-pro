@@ -1,0 +1,36 @@
+name: J-ROC AI CAM PRO — web validation
+
+on:
+  push:
+    branches: [main, "rebuild/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Build and test React dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run JavaScript tests
+        run: npm test
+      - name: Build production dashboard
+        run: npm run build
+      - name: Upload build for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: jroc-cam-pro-web-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
