@@ -1,0 +1,2 @@
+# Install only when using PostgreSQL/Supabase direct connections.
+asyncpg>=0.29,<1

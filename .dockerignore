@@ -1,0 +1,42 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+config/secure_vault.json
+config/secure_vault.enc
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Version control and local editor state
+.git
+.github
+.vscode
+.idea
+
+# Python environments and caches
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Frontend dependencies/build output
+frontend/node_modules
+frontend/dist
+node_modules
+
+# Local data, device dumps, firmware and generated artifacts
+data
+firmware_ota_payloads
+*.ipsw
+*.img
+*.bin
+*.tar
+*.zip
+dist
+build
+coverage

@@ -1,0 +1,61 @@
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: jroc_cam_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jroc_enterprise_db
+      POSTGRES_USER: jroc_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
+    ports:
+      # Local-only access from Windows host tools.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/docker_init.sql:/docker-entrypoint-initdb.d/00_roles.sql:ro
+      - ./database/unified_master_schema.sql:/docker-entrypoint-initdb.d/10_master.sql:ro
+      - ./database/academy_schema.sql:/docker-entrypoint-initdb.d/20_academy.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jroc_admin -d jroc_enterprise_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  backend_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jroc_cam_api
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      JROC_CAM_API_HOST: 0.0.0.0
+      JROC_CAM_API_PORT: 8000
+      DATABASE_URL: postgresql://jroc_admin:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}@database:5432/jroc_enterprise_db
+    ports:
+      # Keep this local-only until API authentication is deployed.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  pgdata:

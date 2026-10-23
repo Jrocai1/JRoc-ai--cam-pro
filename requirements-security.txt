@@ -1,0 +1,3 @@
+# Optional local encrypted configuration vault support.
+# Install with: python -m pip install -r requirements-security.txt
+cryptography>=42.0.0,<47.0.0

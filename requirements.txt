@@ -1,0 +1,5 @@
+# Supported local-first application dependencies.
+-r requirements-dev.txt
+-r requirements-api.txt
+# Optional direct PostgreSQL integration: install requirements-postgres.txt separately.
+# Optional AES-GCM vault: install requirements-security.txt separately.
