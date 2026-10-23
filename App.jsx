@@ -9,6 +9,7 @@ import UnlockForm from "./UnlockForm.jsx";
 import { isStripeConfigured, isSupabaseConfigured } from "./supabaseClient.js";
 import TrackRequest from "./TrackRequest.jsx";
 import AdminRecoveryWorkbench from "./AdminRecoveryWorkbench.jsx";
+import BenchDashboard from "./BenchDashboard.jsx";
 
 const navItems = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -18,6 +19,7 @@ const navItems = [
   { id: "unlock-assistant", label: "AI Unlock Assistant", icon: ShieldCheck },
   { id: "recovery-restore", label: "Recovery & Restore", icon: RotateCcw },
   { id: "admin-workbench", label: "Admin Recovery Workbench", icon: ClipboardCheck },
+  { id: "local-bench", label: "Local Bench Console", icon: Wrench },
   { id: "help", label: "Workflow guide", icon: BookOpen }
 ];
 
@@ -116,6 +118,7 @@ function App() {
           {active === "unlock-assistant" && <UnlockEligibilityAssistant onStart={startRequest} />}
           {active === "recovery-restore" && <RecoveryRestore />}
           {active === "admin-workbench" && <AdminRecoveryWorkbench />}
+          {active === "local-bench" && <BenchDashboard />}
           {active === "help" && <WorkflowGuide onStart={startRequest} />}
         </div>
         <footer className="mx-auto flex max-w-[1500px] flex-col gap-2 border-t border-line px-4 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-7">
