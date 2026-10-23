@@ -9,6 +9,7 @@ import argparse
 from contextlib import closing
 import json
 import logging
+import mimetypes
 import os
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,7 +18,7 @@ import sqlite3
 import threading
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from backend_bus.port_listener import discover_devices, records_as_dicts
 from backend_bus.model_router import load_model_targets
@@ -248,20 +249,49 @@ def make_handler(*, mock: bool, db_path: Path):
                     LOGGER.exception("Read-only diagnostics failed")
                     self.send_json(500, {"error": "Diagnostics failed; see local server log."})
                 return
-            if path in ("/", "/index.html"):
-                try:
-                    body = (WEB_ROOT / "index.html").read_bytes()
-                except OSError:
-                    self.send_error(500, "Dashboard file is missing.")
-                    return
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(body)
+            if path.startswith("/api/"):
+                self.send_json(404, {"error": "Not found"})
                 return
-            self.send_json(404, {"error": "Not found"})
+
+            # Prefer the built React app for the normal product URL. The older
+            # standalone HTML dashboard remains available at /legacy.
+            dist_root = ROOT / "dist"
+            if path in ("/legacy", "/legacy/", "/legacy/index.html"):
+                target = WEB_ROOT / "index.html"
+                content_type = "text/html; charset=utf-8"
+            elif (dist_root / "index.html").is_file():
+                relative = unquote(path.lstrip("/")) or "index.html"
+                root_resolved = dist_root.resolve()
+                target = (dist_root / relative).resolve()
+                try:
+                    target.relative_to(root_resolved)
+                except ValueError:
+                    self.send_json(403, {"error": "Invalid path"})
+                    return
+                if not target.is_file():
+                    target = dist_root / "index.html"
+                content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+                if content_type.startswith("text/") or content_type in ("application/javascript", "application/json", "image/svg+xml"):
+                    content_type += "; charset=utf-8"
+            elif path in ("/", "/index.html"):
+                target = WEB_ROOT / "index.html"
+                content_type = "text/html; charset=utf-8"
+            else:
+                self.send_json(404, {"error": "Not found"})
+                return
+
+            try:
+                body = target.read_bytes()
+            except OSError:
+                self.send_json(500, {"error": "Dashboard asset is missing."})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
 
         def do_PATCH(self):
             route = urlparse(self.path).path
