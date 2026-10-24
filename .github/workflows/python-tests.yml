@@ -2,7 +2,7 @@ name: J-ROC AI CAM PRO — Python tests
 
 on:
   push:
-    branches: [main, "rebuild/**"]
+    branches: [main, "rebuild/**", "build/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
